@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.db.base import Base
+from app.models.user import User
+from app.models.role import Role
+
 
 load_dotenv()
 
@@ -21,7 +25,7 @@ if not database_url:
 config.set_main_option("sqlalchemy.url", database_url)
 
 # This will be connected to Base.metadata once our models are created.
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
