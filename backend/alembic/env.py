@@ -6,8 +6,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.db.base import Base
-from app.models.user import User
-from app.models.role import Role
+from app import models
 
 
 load_dotenv()
