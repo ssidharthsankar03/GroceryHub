@@ -5,18 +5,25 @@ from app.api.deps import require_role
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.catalog import (
+    BrandCreate,
+    BrandResponse,
+    BrandUpdate,
     CategoryCreate,
     CategoryResponse,
     CategoryUpdate,
 )
 from app.services.catalog_service import (
+    create_brand,
     create_category,
+    delete_brand,
     delete_category,
+    get_brand,
+    get_brands,
     get_categories,
     get_category,
+    update_brand,
     update_category,
 )
-
 
 router = APIRouter(
     prefix="/categories",
@@ -125,3 +132,106 @@ def delete(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
+
+
+brand_router = APIRouter(prefix="/brands", tags=["Brands"])
+
+
+@brand_router.post(
+    "",
+    response_model=BrandResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_brand_endpoint(
+    brand_data: BrandCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    try:
+        return create_brand(db, brand_data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@brand_router.get(
+    "",
+    response_model=list[BrandResponse],
+)
+def get_all_brands(
+    db: Session = Depends(get_db),
+):
+    return get_brands(db)
+
+
+@brand_router.get(
+    "/{brand_id}",
+    response_model=BrandResponse,
+)
+def get_one_brand(
+    brand_id: int,
+    db: Session = Depends(get_db),
+):
+    brand = get_brand(db, brand_id)
+
+    if brand is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Brand not found",
+        )
+
+    return brand
+
+
+@brand_router.patch(
+    "/{brand_id}",
+    response_model=BrandResponse,
+)
+def update_brand_endpoint(
+    brand_id: int,
+    brand_data: BrandUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    try:
+        brand = update_brand(db, brand_id, brand_data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if brand is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Brand not found",
+        )
+
+    return brand
+
+
+@brand_router.delete(
+    "/{brand_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_brand_endpoint(
+    brand_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    try:
+        deleted = delete_brand(db, brand_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Brand not found",
+        )
+
