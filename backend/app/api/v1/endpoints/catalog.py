@@ -11,6 +11,9 @@ from app.schemas.catalog import (
     CategoryCreate,
     CategoryResponse,
     CategoryUpdate,
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
 )
 from app.services.catalog_service import (
     create_brand,
@@ -23,6 +26,11 @@ from app.services.catalog_service import (
     get_category,
     update_brand,
     update_category,
+    create_product,
+    delete_product,
+    get_product,
+    get_products,
+    update_product,
 )
 
 router = APIRouter(
@@ -235,3 +243,104 @@ def delete_brand_endpoint(
             detail="Brand not found",
         )
 
+product_router = APIRouter(
+    prefix="/products",
+    tags=["Products"],
+)
+
+
+@product_router.post(
+    "",
+    response_model=ProductResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_product_endpoint(
+    product_data: ProductCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    try:
+        return create_product(db, product_data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@product_router.get(
+    "",
+    response_model=list[ProductResponse],
+)
+def get_all_products(
+    db: Session = Depends(get_db),
+):
+    return get_products(db)
+
+
+@product_router.get(
+    "/{product_id}",
+    response_model=ProductResponse,
+)
+def get_one_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    product = get_product(db, product_id)
+
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
+    return product
+
+
+@product_router.patch(
+    "/{product_id}",
+    response_model=ProductResponse,
+)
+def update_product_endpoint(
+    product_id: int,
+    product_data: ProductUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    try:
+        product = update_product(
+            db,
+            product_id,
+            product_data,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
+    return product
+
+
+@product_router.delete(
+    "/{product_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_product_endpoint(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("ADMIN")),
+):
+    deleted = delete_product(db, product_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )

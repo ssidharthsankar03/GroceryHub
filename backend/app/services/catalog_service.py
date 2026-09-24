@@ -3,11 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.models.brand import Brand
 from app.models.category import Category
+from app.models.products import Product
 from app.schemas.catalog import (
     BrandCreate,
     BrandUpdate,
     CategoryCreate,
     CategoryUpdate,
+    ProductCreate,
+    ProductUpdate,
 )
 from sqlalchemy.exc import IntegrityError
 
@@ -175,5 +178,117 @@ def delete_brand(db: Session, brand_id: int) -> bool:
         raise ValueError(
             "Cannot delete brand because products are assigned to it"
         ) from exc
+
+    return True
+
+def create_product(
+    db: Session,
+    product_data: ProductCreate,
+) -> Product:
+    category = db.scalar(
+        select(Category).where(
+            Category.id == product_data.category_id
+        )
+    )
+
+    if category is None:
+        raise ValueError("Category not found")
+
+    brand = db.scalar(
+        select(Brand).where(
+            Brand.id == product_data.brand_id
+        )
+    )
+
+    if brand is None:
+        raise ValueError("Brand not found")
+
+    product = Product(
+        name=product_data.name,
+        description=product_data.description,
+        category_id=product_data.category_id,
+        brand_id=product_data.brand_id,
+    )
+
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+
+    return product
+
+
+def get_product(
+    db: Session,
+    product_id: int,
+) -> Product | None:
+    return db.scalar(
+        select(Product).where(
+            Product.id == product_id
+        )
+    )
+
+
+def get_products(db: Session) -> list[Product]:
+    return list(
+        db.scalars(
+            select(Product).order_by(Product.id)
+        ).all()
+    )
+
+
+def update_product(
+    db: Session,
+    product_id: int,
+    product_data: ProductUpdate,
+) -> Product | None:
+    product = get_product(db, product_id)
+
+    if product is None:
+        return None
+
+    update_data = product_data.model_dump(
+        exclude_unset=True
+    )
+
+    if "category_id" in update_data:
+        category = db.scalar(
+            select(Category).where(
+                Category.id == update_data["category_id"]
+            )
+        )
+
+        if category is None:
+            raise ValueError("Category not found")
+
+    if "brand_id" in update_data:
+        brand = db.scalar(
+            select(Brand).where(
+                Brand.id == update_data["brand_id"]
+            )
+        )
+
+        if brand is None:
+            raise ValueError("Brand not found")
+
+    for field, value in update_data.items():
+        setattr(product, field, value)
+
+    db.commit()
+    db.refresh(product)
+
+    return product
+
+
+def delete_product(
+    db: Session,
+    product_id: int,
+) -> bool:
+    product = get_product(db, product_id)
+
+    if product is None:
+        return False
+
+    db.delete(product)
+    db.commit()
 
     return True
