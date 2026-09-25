@@ -1,6 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/customer/Home'
 import Login from './pages/auth/Login'
+
+import Profile from './pages/customer/Profile'
+
+import Register from './pages/auth/Register'
+
 function App() {
   return (
     <BrowserRouter>
@@ -9,9 +14,9 @@ function App() {
 
         {/* Temporary routes — we'll build these pages next */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<div>Register Page</div>} />
+        <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<div>Admin Dashboard</div>} />
-
+        <Route path="/profile" element={<Profile />} />
         {/* Unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

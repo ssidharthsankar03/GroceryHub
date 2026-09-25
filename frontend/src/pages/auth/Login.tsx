@@ -1,18 +1,40 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { loginUser } from '../../services/authServices'
+import { useAuthStore } from '../../store/authStore'
 
 function Login() {
+  const navigate = useNavigate()
+  const login = useAuthStore((state) => state.login)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    console.log({
-      email,
-      password,
-    })
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const data = await loginUser({
+        email,
+        password,
+      })
+
+      login(data.access_token)
+
+      navigate('/')
+    } catch (error) {
+      console.error('Login failed:', error)
+
+      setError('Invalid email or password')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -23,9 +45,7 @@ function Login() {
 
           <h1>Welcome back</h1>
 
-          <p>
-            Login to your GroceryHub account
-          </p>
+          <p>Login to your GroceryHub account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -55,8 +75,14 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="auth-submit">
-            Login
+          {error && <p className="auth-error">{error}</p>}
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
