@@ -1,6 +1,43 @@
-import '../../App.css'
+import "../../App.css";
+import { useEffect, useState } from "react";
+import { getCategories, getProducts } from "../../services/catalogServices";
+import type { Category, Product } from "../../types/catalog";
+import { Link } from "react-router-dom";
 
 function Home() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await getProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
   return (
     <div className="app">
       <header className="navbar">
@@ -67,61 +104,43 @@ function Home() {
           </div>
 
           <div className="category-grid">
-            <div className="category-card">
-              <span>🥦</span>
-              <h3>Vegetables</h3>
-              <p>Fresh & healthy</p>
-            </div>
+            {isLoadingCategories ? (
+              <p>Loading categories...</p>
+            ) : categories.length === 0 ? (
+              <p>No categories available.</p>
+            ) : (
+              categories.map((category) => (
+                <div className="category-card" key={category.id}>
+                  <h3>{category.name}</h3>
 
-            <div className="category-card">
-              <span>🍎</span>
-              <h3>Fruits</h3>
-              <p>Fresh every day</p>
-            </div>
-
-            <div className="category-card">
-              <span>🥛</span>
-              <h3>Dairy</h3>
-              <p>Milk & essentials</p>
-            </div>
-
-            <div className="category-card">
-              <span>🛢️</span>
-              <h3>Cooking Oils</h3>
-              <p>Everyday essentials</p>
-            </div>
-
-            <div className="category-card">
-              <span>🍪</span>
-              <h3>Snacks</h3>
-              <p>Tasty favourites</p>
-            </div>
-
-            <div className="category-card">
-              <span>🧹</span>
-              <h3>Household</h3>
-              <p>Home essentials</p>
-            </div>
+                  {category.description && <p>{category.description}</p>}
+                </div>
+              ))
+            )}
           </div>
         </section>
 
         <section className="products-section">
-          <div className="section-heading">
-            <div>
-              <span className="section-label">Featured</span>
-              <h2>Popular Products</h2>
-            </div>
+          <div className="product-grid">
+            {isLoadingProducts ? (
+              <p>Loading products...</p>
+            ) : products.length === 0 ? (
+              <p>No products available.</p>
+            ) : (
+              products.map((product) => (
+                <article className="product-card" key={product.id}>
+                  <div className="product-image-placeholder">🛒</div>
 
-            <a href="#">View all →</a>
-          </div>
-
-          <div className="empty-products">
-            <span>🛍️</span>
-            <h3>Products coming soon</h3>
-            <p>
-              Our product catalogue will appear here once we connect the
-              frontend to the GroceryHub API.
-            </p>
+                  <div className="product-card-content">
+                    <h3>{product.name}</h3>
+                    {product.description && <p>{product.description}</p>}
+                    <Link to={`/products/${product.id}`}>
+                      View Product
+                    </Link>{" "}
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </section>
       </main>
@@ -135,7 +154,7 @@ function Home() {
         <p>© 2026 GroceryHub. All rights reserved.</p>
       </footer>
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;
