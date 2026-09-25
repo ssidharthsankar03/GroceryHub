@@ -1,41 +1,42 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { loginUser } from '../../services/authServices'
-import { useAuthStore } from '../../store/authStore'
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser,getCurrentUser } from "../../services/authServices";
+import { useAuthStore } from "../../store/authStore";
+import { toast } from "sonner";
 
 function Login() {
-  const navigate = useNavigate()
-  const login = useAuthStore((state) => state.login)
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
+  const setUser = useAuthStore((state) => state.setUser);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    setError('')
-    setIsLoading(true)
+    event.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     try {
-      const data = await loginUser({
-        email,
-        password,
-      })
+      const data = await loginUser({ email, password });
 
-      login(data.access_token)
+      login(data.access_token);
 
-      navigate('/')
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+
+      toast.success("Login successful!");
+
+      navigate("/");
     } catch (error) {
-      console.error('Login failed:', error)
-
-      setError('Invalid email or password')
+      console.error("Login failed:", error);
+      toast.error("Invalid email or password");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <main className="auth-page">
@@ -77,26 +78,21 @@ function Login() {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button
-            type="submit"
-            className="auth-submit"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="auth-submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            Don't have an account?{' '}
-            <Link to="/register">Create one</Link>
+            Don't have an account? <Link to="/register">Create one</Link>
           </p>
 
           <Link to="/">← Back to GroceryHub</Link>
         </div>
       </section>
     </main>
-  )
+  );
 }
 
-export default Login
+export default Login;

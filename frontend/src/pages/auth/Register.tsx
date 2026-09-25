@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/authServices";
+import { toast } from "sonner";
 
 function Register() {
   const navigate = useNavigate();
@@ -28,12 +29,14 @@ function Register() {
         phone_number: phoneNumber,
         password,
       });
+      toast.success("Account created successfully!");
 
       navigate("/login");
     } catch (error) {
       console.error("Registration failed:", error);
 
       setError("Unable to create account. Please check your details.");
+      toast.error("Unable to create account");
     } finally {
       setIsLoading(false);
     }

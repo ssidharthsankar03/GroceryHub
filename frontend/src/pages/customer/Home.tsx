@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { getCategories, getProducts } from "../../services/catalogServices";
 import type { Category, Product } from "../../types/catalog";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { useAuthStore } from "../../store/authStore";
 
 function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -56,12 +59,33 @@ function Home() {
           <button type="button" className="icon-button">
             🔍
           </button>
+
           <button type="button" className="icon-button">
             🛒
           </button>
-          <button type="button" className="login-button">
-            Login
-          </button>
+
+          {isAuthenticated ? (
+            <>
+              <Link to="/profile" className="login-button">
+                {user ? user.first_name : "Profile"}
+              </Link>
+
+              <button
+                type="button"
+                className="login-button"
+                onClick={() => {
+                  logout();
+                  toast.success("Logged out successfully!");
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="login-button">
+              Login
+            </Link>
+          )}
         </div>
       </header>
 
